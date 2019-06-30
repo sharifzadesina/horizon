@@ -36,7 +36,7 @@ class WorkerCommandString
      */
     public static function toOptionsString(SupervisorOptions $options)
     {
-        return sprintf('--once %s --supervisor=%s',
+        return sprintf('%s --supervisor=%s',
             QueueCommandString::toOptionsString($options), $options->name
         );
     }

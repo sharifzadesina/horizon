@@ -35,11 +35,13 @@ class WorkerProcess
      * Create a new worker process instance.
      *
      * @param  \Symfony\Component\Process\Process  $process
+     * @param  bool  $once
      * @return void
      */
-    public function __construct($process)
+    public function __construct($process, $once = false)
     {
         $this->process = $process;
+        $this->once = $once;
     }
 
     /**
@@ -52,7 +54,12 @@ class WorkerProcess
     {
         $this->output = $callback;
 
-        $this->process->run($callback);
+        if ($this->once) {
+            $this->process->run($callback);
+        } else {
+            $this->cooldown();
+            $this->process->start($callback);
+        }
 
         return $this;
     }
@@ -84,11 +91,46 @@ class WorkerProcess
      */
     public function monitor()
     {
-        if ($this->process->isRunning()) {
+        if ($this->process->isRunning() || $this->coolingDown()) {
             return;
         }
 
         $this->restart();
+    }
+
+    /**
+     * Begin the cool-down period for the process.
+     *
+     * @return void
+     */
+    protected function cooldown()
+    {
+        if ($this->coolingDown()) {
+            return;
+        }
+
+        if ($this->restartAgainAt) {
+            $this->restartAgainAt = ! $this->process->isRunning()
+                            ? Chronos::now()->addMinute()
+                            : null;
+
+            if (! $this->process->isRunning()) {
+                event(new UnableToLaunchProcess($this));
+            }
+        } else {
+            $this->restartAgainAt = Chronos::now()->addSecond();
+        }
+    }
+
+    /**
+     * Determine if the process is cooling down from a failed restart.
+     *
+     * @return bool
+     */
+    public function coolingDown()
+    {
+        return isset($this->restartAgainAt) &&
+               Chronos::now()->lt($this->restartAgainAt);
     }
 
     /**

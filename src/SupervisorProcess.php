@@ -62,23 +62,6 @@ class SupervisorProcess extends WorkerProcess
     }
 
     /**
-     * Start the process.
-     *
-     * @param  \Closure  $callback
-     * @return $this
-     */
-    public function start(Closure $callback)
-    {
-        $this->output = $callback;
-
-        $this->cooldown();
-
-        $this->process->start($callback);
-
-        return $this;
-    }
-
-    /**
      * Evaluate the current state of the process.
      *
      * @return void
@@ -120,41 +103,6 @@ class SupervisorProcess extends WorkerProcess
         }
 
         $this->reprovision();
-    }
-
-    /**
-     * Begin the cool-down period for the process.
-     *
-     * @return void
-     */
-    protected function cooldown()
-    {
-        if ($this->coolingDown()) {
-            return;
-        }
-
-        if ($this->restartAgainAt) {
-            $this->restartAgainAt = ! $this->process->isRunning()
-                            ? Chronos::now()->addMinute()
-                            : null;
-
-            if (! $this->process->isRunning()) {
-                event(new UnableToLaunchProcess($this));
-            }
-        } else {
-            $this->restartAgainAt = Chronos::now()->addSecond();
-        }
-    }
-
-    /**
-     * Determine if the process is cooling down from a failed restart.
-     *
-     * @return bool
-     */
-    public function coolingDown()
-    {
-        return isset($this->restartAgainAt) &&
-               Chronos::now()->lt($this->restartAgainAt);
     }
 
     /**
