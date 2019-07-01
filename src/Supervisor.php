@@ -262,8 +262,6 @@ class Supervisor implements Pausable, Restartable, Terminable
         $this->persist();
 
         while (true) {
-            sleep(1);
-
             $this->loop();
         }
     }

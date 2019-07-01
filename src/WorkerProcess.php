@@ -91,9 +91,7 @@ class WorkerProcess
      */
     public function monitor()
     {
-        if ($this->once && $this->process->isRunning()) {
-            $this->stop();
-        } elseif ($this->process->isRunning() || $this->coolingDown()) {
+        if ($this->process->isRunning() || $this->coolingDown()) {
             return;
         }
 
