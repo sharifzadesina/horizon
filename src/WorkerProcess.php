@@ -55,7 +55,7 @@ class WorkerProcess
         $this->output = $callback;
 
         if ($this->once) {
-            $this->process->run($callback);
+            $this->process->start($callback);
         } else {
             $this->cooldown();
             $this->process->start($callback);
@@ -91,7 +91,9 @@ class WorkerProcess
      */
     public function monitor()
     {
-        if ($this->process->isRunning() || $this->coolingDown()) {
+        if ($this->once && $this->process->isRunning()) {
+            $this->stop();
+        } elseif ($this->process->isRunning() || $this->coolingDown()) {
             return;
         }
 
